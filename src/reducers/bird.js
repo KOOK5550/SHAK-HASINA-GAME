@@ -3,7 +3,7 @@ const initialState = {
   r: 0,
 }
 
-export default (state = initialState, {type} = {}) => {
+const birdRed = (state = initialState, {type} = {}) => {
   switch (type) {
     case 'FLY':
       return {...state, y: state.y - 50, r: -30}
@@ -15,3 +15,4 @@ export default (state = initialState, {type} = {}) => {
       return state
   }
 }
+export default birdRed

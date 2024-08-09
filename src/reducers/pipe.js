@@ -3,7 +3,7 @@ const initialState = {
   pipes: [],
 }
 
-export default (state = initialState, {type} = {}) => {
+const pipeRed=(state = initialState, {type} = {}) => {
   switch (type) {
     case 'RUNNING':
       if (!state.pipes.length) {
@@ -21,3 +21,4 @@ export default (state = initialState, {type} = {}) => {
       return state
   }
 }
+export default pipeRed

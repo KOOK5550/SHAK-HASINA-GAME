@@ -1,4 +1,4 @@
-export default (state = {}, {type} = {}) => {
+const gameRed= (state = {}, {type} = {}) => {
   switch (type) {
     case 'START':
       return {...state, status: 'playing'}
@@ -8,3 +8,4 @@ export default (state = {}, {type} = {}) => {
       return state
   }
 }
+export default gameRed
