@@ -1,0 +1,212 @@
+import React, { useEffect, useRef, useState } from "react";
+import { connect } from "react-redux";
+
+import Bird from "./Bird";
+import Pipe from "./Pipe";
+import Foreground from "./Foreground";
+
+import BgImage from "../images/bg.png";
+import BgImageTop from "../images/bgtop.png";
+import BgMusic from "../audio/hasina.mp3";
+
+let gameLoop;
+let pipeGenerator;
+
+const Game = ({ status, start, fly }) => {
+  const [isBlurred, setIsBlurred] = useState(true);
+  const [showGame, setShowGame] = useState(false);
+
+  if (status === "game-over") {
+    clearInterval(gameLoop);
+    clearInterval(pipeGenerator);
+  }
+
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowGame(true);
+      setTimeout(() => {
+        setIsBlurred(false);
+      }, 1000); // 1-second transition for the blur effect
+    }, 3000); // 3-second delay before showing the game
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      fly();
+
+      if (status !== "playing") {
+        start();
+      }
+      e.preventDefault();
+    };
+
+    // Add event listeners for both mouse clicks and touch events
+    document.addEventListener("click", handleKeyPress);
+    document.addEventListener("touchend", handleKeyPress);
+
+    return () => {
+      document.removeEventListener("click", handleKeyPress);
+      document.removeEventListener("touchend", handleKeyPress);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (audioRef.current) {
+        audioRef.current.play().catch((error) => {
+          console.warn("Audio playback failed:", error);
+        });
+      }
+      document.removeEventListener("click", handleUserInteraction);
+      document.removeEventListener("touchend", handleUserInteraction);
+    };
+
+    document.addEventListener("click", handleUserInteraction);
+    document.addEventListener("touchend", handleUserInteraction);
+
+    return () => {
+      document.removeEventListener("click", handleUserInteraction);
+      document.removeEventListener("touchend", handleUserInteraction);
+    };
+  }, [status]);
+
+  useEffect(() => {
+    if (status && audioRef.current) {
+      if (status === "playing") {
+        audioRef.current.play().catch((error) => {
+          console.warn("Audio playback failed:", error);
+        });
+      }
+      return () => {
+        // Stop music when the game is over
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0; // Reset music to the start
+        }
+      };
+    }
+  }, [status]);
+
+  const containerStyle = {
+    position: "relative",
+    width: "100vw",
+    height: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: `url(${BgImageTop}) no-repeat center center`,
+    backgroundSize: "cover",
+    overflow: "hidden",
+    backgroundPosition: "center center",
+    backgroundAttachment: "fixed",
+  };
+
+  const mobileStyle = {
+    backgroundSize: "contain", // Ensures the whole background image is visible on smaller screens
+    backgroundPosition: "center top", // Adjusts the background positioning to focus more on the top
+    background: `url(${BgImageTop}) repeat center center`,
+  };
+
+  return (
+    <div
+      style={{
+        ...containerStyle,
+        ...(window.innerWidth < 768 ? mobileStyle : {}),
+      }}
+    >
+      {showGame && (
+        <div
+          style={{
+            position: "relative",
+            width: 288,
+            height: 512,
+            background: `url(${BgImage})`,
+            overflow: "hidden",
+            filter: isBlurred ? "blur(10px)" : "blur(0)",
+            transition: "filter 1s ease-in-out",
+            border:"6px solid white"
+          }}
+        >
+          <audio ref={audioRef} src={BgMusic} loop />
+
+          <Bird />
+          <Pipe />
+          <Foreground />
+        </div>
+      )}
+    </div>
+  );
+};
+
+const fly = () => {
+  return (dispatch) => {
+    dispatch({ type: "FLY" });
+  };
+};
+
+const start = () => {
+  return (dispatch, getState) => {
+    const { status } = getState().game;
+
+    if (status !== "playing") {
+      gameLoop = setInterval(() => {
+        dispatch({ type: "FALL" });
+        dispatch({ type: "RUNNING" });
+
+        check(dispatch, getState);
+      }, 200);
+
+      pipeGenerator = setInterval(() => {
+        dispatch({ type: "GENERATE" });
+      }, 3000);
+
+      dispatch({ type: "START" });
+    }
+  };
+};
+
+const check = (dispatch, getState) => {
+  const state = getState();
+  const birdY = state.bird.y;
+  const pipes = state.pipe.pipes;
+  const x = state.pipe.x;
+  const challenge = pipes
+    .map(({ topHeight }, i) => {
+      return {
+        x1: x + i * 200,
+        y1: topHeight,
+        x2: x + i * 200,
+        y2: topHeight + 100,
+      };
+    })
+    .filter(({ x1 }) => {
+      if (x1 > 0 && x1 < 288) {
+        return true;
+      }
+    });
+
+  if (birdY > 512 - 108) {
+    dispatch({ type: "GAME_OVER" });
+  }
+
+  if (challenge.length) {
+    const { x1, y1, x2, y2 } = challenge[0];
+    console.log({ x1, y1, x2, y2 });
+
+    if (
+      (x1 < 120 && 120 < x1 + 52 && birdY < y1) ||
+      (x2 < 120 && 120 < x2 + 52 && birdY > y2)
+    ) {
+      dispatch({ type: "GAME_OVER" });
+    }
+  }
+};
+
+const mapStateToProps = ({ game }) => ({ status: game.status });
+const mapDispatchToProps = { start, fly };
+
+export default connect(mapStateToProps, mapDispatchToProps)(Game);
