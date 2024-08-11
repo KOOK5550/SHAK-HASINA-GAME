@@ -8,6 +8,7 @@ import Foreground from "./Foreground";
 import BgImage from "../images/bg.png";
 import BgImageTop from "../images/bgtop.png";
 import BgMusic from "../audio/hasina.mp3";
+import Scoreboard from "./Score";
 
 let gameLoop;
 let pipeGenerator;
@@ -15,6 +16,7 @@ let pipeGenerator;
 const Game = ({ status, start, fly }) => {
   const [isBlurred, setIsBlurred] = useState(true);
   const [showGame, setShowGame] = useState(false);
+  const [score, setScore] = useState(0); // Add score state
 
   if (status === "game-over") {
     clearInterval(gameLoop);
@@ -38,8 +40,8 @@ const Game = ({ status, start, fly }) => {
     const handleKeyPress = (e) => {
       fly();
 
-      if (status !== "playing") {
-        start();
+      if (status !== "playing" && status !== "game-over") {
+        start(setScore);
       }
       e.preventDefault();
     };
@@ -91,6 +93,18 @@ const Game = ({ status, start, fly }) => {
     }
   }, [status]);
 
+  const handleTryAgain = () => {
+    // Dispatch action to restart the game and reset the score
+    setScore(0);
+    start(setScore);
+  };
+
+  // useEffect(() => {
+  //   if (status === "game-over") {
+  //     setScore(0); // Reset score on game over
+  //   }
+  // }, [status]);
+
   const containerStyle = {
     position: "relative",
     width: "100vw",
@@ -136,6 +150,19 @@ const Game = ({ status, start, fly }) => {
           <Bird />
           <Pipe />
           <Foreground />
+          <div
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            color: "white",
+            fontSize: "24px",
+            fontWeight: "bold",
+          }}
+        >
+          স্বজন: {score}
+        </div>
+        {status === "game-over" && <Scoreboard score={score} onTryAgain={handleTryAgain}/>}
         </div>
       )}
     </div>
@@ -148,7 +175,7 @@ const fly = () => {
   };
 };
 
-const start = () => {
+const start = (setScore) => {
   return (dispatch, getState) => {
     const { status } = getState().game;
 
@@ -157,7 +184,7 @@ const start = () => {
         dispatch({ type: "FALL" });
         dispatch({ type: "RUNNING" });
 
-        check(dispatch, getState);
+        check(dispatch, getState,setScore);
       }, 200);
 
       pipeGenerator = setInterval(() => {
@@ -169,42 +196,44 @@ const start = () => {
   };
 };
 
-const check = (dispatch, getState) => {
+const check = (dispatch, getState, setScore) => {
   const state = getState();
   const birdY = state.bird.y;
   const pipes = state.pipe.pipes;
   const x = state.pipe.x;
+
   const challenge = pipes
-    .map(({ topHeight }, i) => {
+    .map(({ topHeight, passed }, i) => {
       return {
+        index: i, // Track the index of the pipe
         x1: x + i * 200,
         y1: topHeight,
         x2: x + i * 200,
         y2: topHeight + 100,
+        passed: passed, // Use the `passed` status from Redux state
       };
     })
-    .filter(({ x1 }) => {
-      if (x1 > 0 && x1 < 288) {
-        return true;
-      }
-    });
+    .filter(({ x1 }) => x1 > 0 && x1 < 288);
 
   if (birdY > 512 - 108) {
     dispatch({ type: "GAME_OVER" });
   }
 
   if (challenge.length) {
-    const { x1, y1, x2, y2 } = challenge[0];
-    console.log({ x1, y1, x2, y2 });
+    const { x1, y1, x2, y2, index, passed } = challenge[0];
 
     if (
       (x1 < 120 && 120 < x1 + 52 && birdY < y1) ||
       (x2 < 120 && 120 < x2 + 52 && birdY > y2)
     ) {
       dispatch({ type: "GAME_OVER" });
+    } else if (x1 + 52 < 120 && !passed) {
+      setScore((prevScore) => prevScore + 1);
+      dispatch({ type: "MARK_PASSED", index }); // Mark this pipe as passed
     }
   }
 };
+
 
 const mapStateToProps = ({ game }) => ({ status: game.status });
 const mapDispatchToProps = { start, fly };
