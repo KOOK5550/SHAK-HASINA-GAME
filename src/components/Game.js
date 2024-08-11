@@ -16,7 +16,7 @@ let pipeGenerator;
 const Game = ({ status, start, fly }) => {
   const [isBlurred, setIsBlurred] = useState(true);
   const [showGame, setShowGame] = useState(false);
-  const [score, setScore] = useState(0); // Add score state
+  const [score, setScore] = useState(0);
   const [restart, setRestart] = useState(false);
 
   if (status === "game-over") {
@@ -31,33 +31,30 @@ const Game = ({ status, start, fly }) => {
       setShowGame(true);
       setTimeout(() => {
         setIsBlurred(false);
-      }, 1000); // 1-second transition for the blur effect
-    }, 3000); // 3-second delay before showing the game
+      }, 1000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (restart === false) {
-      const handleKeyPress = (e) => {
-        fly();
+    const handleKeyPress = (e) => {
+      fly(); // Fly the bird on every keypress
 
-        if (status !== "playing" && status !== "game-over") {
-          start(setScore);
-        }
-        e.preventDefault();
-      };
+      if (status !== "playing" && status !== "game-over") {
+        start(setScore); // Start the game if it's not already playing or over
+      }
+      e.preventDefault();
+    };
 
-      // Add event listeners for both mouse clicks and touch events
-      document.addEventListener("click", handleKeyPress);
-      document.addEventListener("touchend", handleKeyPress);
+    document.addEventListener("click", handleKeyPress);
+    document.addEventListener("touchend", handleKeyPress);
 
-      return () => {
-        document.removeEventListener("click", handleKeyPress);
-        document.removeEventListener("touchend", handleKeyPress);
-      };
-    }
-  }, []);
+    return () => {
+      document.removeEventListener("click", handleKeyPress);
+      document.removeEventListener("touchend", handleKeyPress);
+    };
+  }, [status]);
 
   useEffect(() => {
     const handleUserInteraction = () => {
@@ -87,27 +84,19 @@ const Game = ({ status, start, fly }) => {
         });
       }
       return () => {
-        // Stop music when the game is over
         if (audioRef.current) {
           audioRef.current.pause();
-          audioRef.current.currentTime = 0; // Reset music to the start
+          audioRef.current.currentTime = 0;
         }
       };
     }
   }, [status]);
 
   const handleTryAgain = () => {
-    // Dispatch action to restart the game and reset the score
     setScore(0);
     setRestart(true);
     start(setScore);
   };
-
-  // useEffect(() => {
-  //   if (status === "game-over") {
-  //     setScore(0); // Reset score on game over
-  //   }
-  // }, [status]);
 
   const containerStyle = {
     position: "relative",
@@ -124,8 +113,8 @@ const Game = ({ status, start, fly }) => {
   };
 
   const mobileStyle = {
-    backgroundSize: "contain", // Ensures the whole background image is visible on smaller screens
-    backgroundPosition: "center top", // Adjusts the background positioning to focus more on the top
+    backgroundSize: "contain",
+    backgroundPosition: "center top",
     background: `url(${BgImageTop}) repeat center center`,
   };
 
@@ -211,12 +200,12 @@ const check = (dispatch, getState, setScore) => {
   const challenge = pipes
     .map(({ topHeight, passed }, i) => {
       return {
-        index: i, // Track the index of the pipe
+        index: i,
         x1: x + i * 200,
         y1: topHeight,
         x2: x + i * 200,
         y2: topHeight + 100,
-        passed: passed, // Use the `passed` status from Redux state
+        passed: passed,
       };
     })
     .filter(({ x1 }) => x1 > 0 && x1 < 288);
@@ -235,7 +224,7 @@ const check = (dispatch, getState, setScore) => {
       dispatch({ type: "GAME_OVER" });
     } else if (x1 + 52 < 120 && !passed) {
       setScore((prevScore) => prevScore + 1);
-      dispatch({ type: "MARK_PASSED", index }); // Mark this pipe as passed
+      dispatch({ type: "MARK_PASSED", index });
     }
   }
 };
