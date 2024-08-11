@@ -17,6 +17,7 @@ const Game = ({ status, start, fly }) => {
   const [isBlurred, setIsBlurred] = useState(true);
   const [showGame, setShowGame] = useState(false);
   const [score, setScore] = useState(0); // Add score state
+  const [restart, setRestart] = useState(false);
 
   if (status === "game-over") {
     clearInterval(gameLoop);
@@ -37,23 +38,25 @@ const Game = ({ status, start, fly }) => {
   }, []);
 
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      fly();
+    if (restart === false) {
+      const handleKeyPress = (e) => {
+        fly();
 
-      if (status !== "playing" && status !== "game-over") {
-        start(setScore);
-      }
-      e.preventDefault();
-    };
+        if (status !== "playing" && status !== "game-over") {
+          start(setScore);
+        }
+        e.preventDefault();
+      };
 
-    // Add event listeners for both mouse clicks and touch events
-    document.addEventListener("click", handleKeyPress);
-    document.addEventListener("touchend", handleKeyPress);
+      // Add event listeners for both mouse clicks and touch events
+      document.addEventListener("click", handleKeyPress);
+      document.addEventListener("touchend", handleKeyPress);
 
-    return () => {
-      document.removeEventListener("click", handleKeyPress);
-      document.removeEventListener("touchend", handleKeyPress);
-    };
+      return () => {
+        document.removeEventListener("click", handleKeyPress);
+        document.removeEventListener("touchend", handleKeyPress);
+      };
+    }
   }, []);
 
   useEffect(() => {
@@ -96,6 +99,7 @@ const Game = ({ status, start, fly }) => {
   const handleTryAgain = () => {
     // Dispatch action to restart the game and reset the score
     setScore(0);
+    setRestart(true);
     start(setScore);
   };
 
@@ -142,7 +146,7 @@ const Game = ({ status, start, fly }) => {
             overflow: "hidden",
             filter: isBlurred ? "blur(10px)" : "blur(0)",
             transition: "filter 1s ease-in-out",
-            border:"6px solid white"
+            border: "6px solid white",
           }}
         >
           <audio ref={audioRef} src={BgMusic} loop />
@@ -151,18 +155,20 @@ const Game = ({ status, start, fly }) => {
           <Pipe />
           <Foreground />
           <div
-          style={{
-            position: "absolute",
-            top: 10,
-            left: 10,
-            color: "white",
-            fontSize: "24px",
-            fontWeight: "bold",
-          }}
-        >
-          স্বজন: {score}
-        </div>
-        {status === "game-over" && <Scoreboard score={score} onTryAgain={handleTryAgain}/>}
+            style={{
+              position: "absolute",
+              top: 10,
+              left: 10,
+              color: "white",
+              fontSize: "24px",
+              fontWeight: "bold",
+            }}
+          >
+            স্বজন: {score}
+          </div>
+          {status === "game-over" && (
+            <Scoreboard score={score} onTryAgain={handleTryAgain} />
+          )}
         </div>
       )}
     </div>
@@ -184,7 +190,7 @@ const start = (setScore) => {
         dispatch({ type: "FALL" });
         dispatch({ type: "RUNNING" });
 
-        check(dispatch, getState,setScore);
+        check(dispatch, getState, setScore);
       }, 200);
 
       pipeGenerator = setInterval(() => {
@@ -233,7 +239,6 @@ const check = (dispatch, getState, setScore) => {
     }
   }
 };
-
 
 const mapStateToProps = ({ game }) => ({ status: game.status });
 const mapDispatchToProps = { start, fly };
