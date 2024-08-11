@@ -51,7 +51,7 @@ const Scoreboard = ({ score, onTryAgain }) => {
     <div style={containerStyle}>
       <img src={ScoreboardImage} alt="Scoreboard" style={imageStyle} />
       <div style={pookieStyle}>Pookie,</div>
-      <div style={textStyle}>আপনি {score}টি স্বজন হারিয়েছেন</div>
+      <div style={textStyle}>হাসিনা {score}টি স্বজন হারিয়েছেন</div>
       <button
         style={buttonStyle}
         onClick={() => {

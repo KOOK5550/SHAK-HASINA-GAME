@@ -160,6 +160,38 @@ const Game = ({ status, start, fly }) => {
           )}
         </div>
       )}
+     <div
+    style={{
+      position: "absolute",
+      bottom: 10,
+      width: "100%",
+      textAlign: "center",
+      color: "white",
+      fontSize: "12px",
+      fontWeight: "normal",
+      textShadow: "2px 2px 4px rgba(0, 0, 0, 0.7)",
+    }}
+  >
+    Made with <span style={{ color: "red" }}>❤</span> by{" "}
+    <a
+      style={{
+        color: "white",
+        // textDecoration: "none",
+        
+      }}
+      href="https://www.facebook.com/fshahriar3/"
+      target="_blank" // Opens the link in a new tab
+      rel="noopener noreferrer" // For security purposes
+      onClick={(e) => {
+        e.stopPropagation(); // Stop the event from propagating to parent elements
+      }}
+      onTouchEnd={(e) => {
+        e.stopPropagation(); // Stop the event from propagating to parent elements
+      }}
+    >
+      Fahim
+    </a>
+  </div>
     </div>
   );
 };
